@@ -1,0 +1,77 @@
+---
+-
+  hosts: localhost
+  connection: local
+  gather_facts: false
+ 
+  vars:
+    aws_key_pair: ansible
+    aws_region: ap-south-1
+    
+
+  tasks:
+  - name: Create a security gourp in AWS for SSH access and HTTP
+    ec2_group:
+      name: ansible
+      description: Ansible Security Group
+      region: "{{ aws_region }}"
+      rules:
+        - proto: tcp
+          from_port: 80
+          to_port: 80
+          cidr_ip: 0.0.0.0/0
+        - proto: tcp
+          from_port: 22
+          to_port: 22
+          cidr_ip: 0.0.0.0/0
+  
+  - name: Provision a set of instances
+    ec2:
+      key_name: "{{ aws_key_pair }}"
+      group: ansible
+      instance_type: t2.micro
+      image: ami-06a0b4e3b7eb7a300
+      region: "{{ aws_region }}"
+      wait: true
+      exact_count: "{{ count }}"
+      count_tag:
+        Name: AnsibleNginxWebServers
+    register: ec2
+  
+  - name: Generate sequence ID for tagging
+    debug: msg="{{startsequence}}{{item}}"
+    no_log: true
+    with_sequence: start="1" end="{{count}}" format=%02d
+    register: sequence
+  
+  - name: Tag Instances
+    no_log: true
+    ec2_tag:
+      region: "{{ aws_region }}"
+      resource: "{{ item.0.id }}"
+      tags:
+        Name: "{{ hostname }}-{{ item.1.msg }}"
+        Source: "Ansible"
+    with_together:
+      - "{{ ec2.instances }}"
+      - "{{ sequence.results }}"
+    register: tags
+  
+  - name: Add all instance public IPs to host group
+    no_log: true
+    add_host:
+      hostname: "{{ item.public_ip }}"
+      groups: ansiblehosts
+    with_items: "{{ ec2.instances }}"
+  
+  - name: Show group
+    debug:
+      var: groups.ansiblehosts
+  
+  - name: Show created VM's
+    debug:
+      msg: "Created VM - {{ item.added_tags.Name }}"
+    with_items: "{{ tags.results  }}"
+    loop_control:
+      label: "{{ item.added_tags.Name }}"
+...
