@@ -9,6 +9,6 @@
       path: "/tmp/testing.txt"
       state: touch
 
-  - name: Print version
+  - name: Print HOST IP
     debug:
       msg: "IP IS: {{ host }}"
