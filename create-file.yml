@@ -1,6 +1,6 @@
 ---
 -
-  hosts: "{{ host }}"
+  hosts: localhost
   gather_facts: false
   
   tasks:
@@ -9,6 +9,10 @@
       path: "/tmp/testing.txt"
       state: touch
 
-  - name: Print HOST IP
+  - name: Get hostname
+    shell: echo $HOSTNAME
+    register: result
+
+  - name: Print hostname
     debug:
-      msg: "IP IS: {{ host }}"
+      msg: "Hostname is: {{ result }}"
