@@ -8,3 +8,7 @@
     file:
       path: "/tmp/testing.txt"
       state: touch
+
+  - name: Debug hostname
+    msg: "IP is {{ host }}"
+    
