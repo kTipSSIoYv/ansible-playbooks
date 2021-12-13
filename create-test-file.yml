@@ -1,0 +1,18 @@
+---
+- name: Create files
+  hosts: all
+  gather_facts: false
+  
+  tasks:
+  - name: Creating an empty file
+    file:
+      path: "/tmp/testing_2.txt"
+      state: touch
+
+  - name: Get hostname
+    shell: echo $HOSTNAME
+    register: result
+
+  - name: Print hostname
+    debug:
+      msg: "Hostname is: {{ result }}"
