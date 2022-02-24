@@ -16,3 +16,7 @@
   - name: Print hostname
     debug:
       msg: "Hostname is: {{ result }}"
+
+  - name: Set flag
+    set_fact: flag = failed
+    when: "'UNREACHABLE' in command_result.stderr"      
