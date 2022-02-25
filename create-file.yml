@@ -8,7 +8,7 @@
     file:
       path: "/tmp/testing.txt"
       state: touch
-    register: command_result
+    register: 
 
   - name: Get hostname
     shell: echo $HOSTNAME
