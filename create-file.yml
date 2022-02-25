@@ -8,7 +8,11 @@
     file:
       path: "/tmp/testing.txt"
       state: touch
-    register: command_result
+    register: result
+    ignore_unreachable: true
+  - fail:
+    when: result.unreachable
+      
 
   - name: Get hostname
     shell: echo $HOSTNAME
@@ -17,7 +21,3 @@
   - name: Print hostname
     debug:
       msg: "Hostname is: {{ result }}"
-
-  - name: Set flag
-    set_fact: flag = failed
-    when: "'UNREACHABLE' in command_result.stderr"      
