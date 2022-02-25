@@ -8,10 +8,10 @@
     file:
       path: "/tmp/testing.txt"
       state: touch
-    register: result
-    ignore_unreachable: true
-  - fail:
-    when: result.unreachable
+#    register: result
+#    ignore_unreachable: true
+#  - fail:
+#    when: result.unreachable
       
 
   - name: Get hostname
