@@ -6,7 +6,7 @@
   tasks:
   - name: Creating an empty file
     file:
-      path: "/tmp/testing.txt"
+      path: "/tmp/""{{ filename }}"
       state: touch
 #    register: result
 #    ignore_unreachable: true
