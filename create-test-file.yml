@@ -15,4 +15,4 @@
 
   - name: Print hostname
     debug:
-      msg: "Hostname is: {{ result }}"
+      msg: "Hostname is: {{ vm_id }}"
