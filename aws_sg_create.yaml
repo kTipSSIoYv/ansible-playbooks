@@ -1,0 +1,56 @@
+---
+- hosts: localhost  # put localhost.  We are processing against aws
+  connection: local  # put local.  We are processing against aws
+  gather_facts: False  # don't gather facts against localhost
+  vars:
+    existing_sg_list: []
+
+  tasks:
+
+  - name: Gather information about a particular instance using ID
+    amazon.aws.ec2_instance_info:
+      region: "{{ cloud_region }}"
+      instance_ids:
+        - "{{ vm_id }}"
+    register: ec2_info
+
+  - name: Print EC2 Info
+    debug:
+       msg: "EC2 INFO TESTING: {{ existing_sg_list }}" 
+
+
+  - name: create ec2 security group
+    # create a security group for the vpc
+    amazon.aws.ec2_group:
+      vpc_id: "{{ vpc_id }}"
+      region: "{{ cloud_region }}"
+      state: "present"
+      name: "testing_sg_ansible"
+      description: "testing_sg_ansible"
+      tags:
+        Name: "testing_sg_ansible"
+      rules:
+      - proto: tcp
+        ports:
+        - 22
+        cidr_ip: "10.10.10.0/24"
+        rule_desc: allow all on port 22
+    register: security_group_results
+
+  - name: "Generate SG list"
+    set_fact:
+      new_sg: "{{ [ security_group_results.group_id  ] }}"
+
+
+  - name: Print new SG ID
+    debug:
+       msg: "EC2 NEW SG ID: {{ new_sg }}"
+
+
+  - name: "Attach SG"
+    amazon.aws.ec2_instance:
+      region: "{{ cloud_region }}"
+      instance_ids:
+        - "{{ vm_id }}"
+      state: running
+      security_groups: "{{ new_sg }}"
