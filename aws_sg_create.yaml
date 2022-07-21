@@ -52,7 +52,7 @@
             cidr_ip: [3]
           }")
         }}
-    when: (sg_rules is defined and create_sg_rules == '1')
+    when: (sg_rules is defined and sg_create_rules == '1')
     register: security_group_results
 
 
