@@ -52,7 +52,7 @@
             cidr_ip: [3]
           }")
         }}
-    when: rules is defined
+    when: sg_rules is defined
     register: security_group_results
 
 
