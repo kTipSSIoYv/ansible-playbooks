@@ -2,8 +2,13 @@
 - hosts: localhost  # put localhost.  We are processing against aws
   connection: local  # put local.  We are processing against aws
   gather_facts: False  # don't gather facts against localhost
-  vars:
-    existing_sg_list: []
+  #vars:
+    #existing_sg_list: []
+    #rules: "TCP,22,22,10.10.10.0/24\nTCP,8080,8080,0.0.0.0/0"
+    #vm_id: "i-1234"
+    #cloud_region: "east-us"
+    #vpc_id: "vpc-1234"
+    #sg_name: "testing-sg"
 
   tasks:
 
@@ -14,9 +19,14 @@
         - "{{ vm_id }}"
     register: ec2_info
 
+
   - name: Print EC2 Info
     debug:
-       msg: "EC2 INFO TESTING: {{ existing_sg_list }}" 
+      #msg: "EC2 INFO: {{ ec2_info.instances[0].security_groups[0].group_id }}"
+      msg:
+        - "EC2 INFO cloud_region: {{ cloud_region }}"
+        - "EC2 INFO vpc_id: {{ vpc_id }}"
+        - "EC2 INFO sg_name: {{ sg_name }}"
 
 
   - name: create ec2 security group
@@ -25,17 +35,42 @@
       vpc_id: "{{ vpc_id }}"
       region: "{{ cloud_region }}"
       state: "present"
-      name: "testing_sg_ansible"
-      description: "testing_sg_ansible"
+      name: "{{ sg_name }}"
+      description: "Security Group {{ sg_name }}"
       tags:
-        Name: "testing_sg_ansible"
+        Name: "{{ sg_name }}"
+      rules: >-
+        {{
+          sg_rules.splitlines()
+          | map('split', ',')
+          | json_query("[*].{
+            proto: [0],
+            from_port: [1],
+            to_port: [2],
+            cidr_ip: [3]
+          }")
+        }}
+    when: rules is defined
+    register: security_group_results
+
+
+  - name: update Ec2 security group
+    # update security group for the vpc
+    amazon.aws.ec2_group:
+      vpc_id: "{{ vpc_id }}"
+      region: "{{ cloud_region }}"
+      state: "present"
+      name: "{{ sg_name }}"
+      description: "Security Group {[ sg_name }}"
+      tags:
+        Name: "{{ sg_name }}"
+      purge_rules: no
       rules:
       - proto: tcp
-        ports:
-        - 22
-        cidr_ip: "10.10.10.0/24"
-        rule_desc: allow all on port 22
-    register: security_group_results
+        from_port: 22
+        to_port: 22
+        cidr_ip: "{{ sg_ssh_cidr }}"
+
 
   - name: "Generate SG list"
     set_fact:
