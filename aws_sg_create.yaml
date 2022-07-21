@@ -18,7 +18,7 @@
       instance_ids:
         - "{{ vm_id }}"
     register: ec2_info
-
+    when: sg_create_new == '1'
 
   - name: Print EC2 Info
     debug:
@@ -29,7 +29,7 @@
         - "EC2 INFO vpc_id: {{ vpc_id }}"
         - "EC2 INFO sg_name: {{ sg_name }}"
         - "EC2 INFO sg_ssh_cidr: {{ sg_ssh_cidr }}"        
-
+    when: sg_create_new == '1'
 
   - name: create ec2 security group
     # create a security group for the vpc
@@ -77,12 +77,12 @@
   - name: "Generate SG list"
     set_fact:
       new_sg: "{{ [ security_group_results.group_id  ] }}"
-
+    when: sg_create_new == '1'
 
   - name: Print new SG ID
     debug:
        msg: "EC2 NEW SG ID: {{ new_sg }}"
-
+    when: sg_create_new == '1'
 
   - name: "Attach SG"
     amazon.aws.ec2_instance:
@@ -91,3 +91,4 @@
         - "{{ vm_id }}"
       state: running
       security_groups: "{{ new_sg }}"
+    when: sg_create_new == '1'
