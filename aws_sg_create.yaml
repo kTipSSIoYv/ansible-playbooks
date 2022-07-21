@@ -52,7 +52,7 @@
             cidr_ip: [3]
           }")
         }}
-    when: (sg_rules is defined and create_sg_rules == 1)
+    when: (sg_rules is defined and create_sg_rules == '1')
     register: security_group_results
 
 
@@ -72,7 +72,7 @@
         from_port: 22
         to_port: 22
         cidr_ip: "{{ sg_ssh_cidr }}"
-    when: sg_create_new == 1
+    when: sg_create_new == '1'
 
   - name: "Generate SG list"
     set_fact:
