@@ -11,14 +11,14 @@
     #sg_name: "testing-sg"
 
   tasks:
-
+  
   - name: Gather information about a particular instance using ID
     amazon.aws.ec2_instance_info:
       region: "{{ cloud_region }}"
       instance_ids:
         - "{{ vm_id }}"
     register: ec2_info
-    when: sg_create_new == '1'
+    #when: sg_create_new == '1'
 
   - name: Print EC2 Info
     debug:
@@ -29,7 +29,7 @@
         - "EC2 INFO vpc_id: {{ vpc_id }}"
         - "EC2 INFO sg_name: {{ sg_name }}"
         - "EC2 INFO sg_ssh_cidr: {{ sg_ssh_cidr }}"        
-    when: sg_create_new == '1'
+    #when: sg_create_new == '1'
 
   - name: create ec2 security group
     # create a security group for the vpc
@@ -55,7 +55,6 @@
     when: (sg_rules is defined and sg_create_rules == '1' and sg_create_new == '1')
     register: security_group_results
 
-
   - name: update Ec2 security group
     # update security group for the vpc
     amazon.aws.ec2_group:
@@ -74,15 +73,16 @@
         cidr_ip: "{{ sg_ssh_cidr }}"
     when: sg_create_new == '1'
 
+  - meta: end_play
+    when: sg_create_new == '0'
+
   - name: "Generate SG list"
     set_fact:
-      new_sg: "{{ [ security_group_results.group_id  ] }}"
-    when: sg_create_new == '1'
+      new_sg: "{{ [ security_group_results.group_id  ] }}"    
 
   - name: Print new SG ID
     debug:
-       msg: "EC2 NEW SG ID: {{ new_sg }}"
-    when: sg_create_new == '1'
+       msg: "EC2 NEW SG ID: {{ new_sg }}"    
 
   - name: "Attach SG"
     amazon.aws.ec2_instance:
@@ -90,5 +90,4 @@
       instance_ids:
         - "{{ vm_id }}"
       state: running
-      security_groups: "{{ new_sg }}"
-    when: sg_create_new == '1'
+      security_groups: "{{ new_sg }}"    
