@@ -1,0 +1,187 @@
+---
+-
+  hosts: localhost
+  connection: local
+  gather_facts: false
+  vars:
+    resource_group: "cloud-shell-storage-centralindia"
+    vm_name: Ubuntu915
+    #public_ip_address: Ubuntu-915-test
+    sg_name: testing-sg_new_5
+    sg_ssh_cidr: "192.168.1.0/24"
+    sg_rules: "Rule_6,Tcp,*,8086,10.10.10.0/24,*,401\nRule_7,Tcp,*,8087,172.168.1.2,*,402"
+
+  tasks:
+
+  - name: Get facts by name
+    azure_rm_virtualmachine_info:
+      resource_group: "cloud-shell-storage-centralindia"
+      name: "{{ vm_name }}"
+    register: azure_vm_info
+    #when: sg_create_new == '1'
+
+    - meta: end_play
+    when: sg_create_new == '0'
+
+  - name: Print Azure VM Info
+    debug:
+      #msg: "Azure VM INFO: {{ azure_vm_info.vms[0].network_interface_names[0] }}"
+      msg:
+        - "Azure INFO cloud_region: {{ azure_vm_info.vms[0].location }}"
+        - "Azure INFO vm_interface_name: {{ azure_vm_info.vms[0].network_interface_names[0] }}"
+
+
+  - name: "Set Azure VM Facts"
+    set_fact:
+      azure_vm_network_interface: "{{ azure_vm_info.vms[0].network_interface_names[0] }}"
+      azure_vm_network_interface: "{{ azure_vm_info.vms[0].network_interface_names[0] }}"
+      azure_vm_region: "{{ azure_vm_info.vms[0].location }}"
+
+  - name: Get facts for one network interface
+    azure_rm_networkinterface_info:
+      resource_group: "{{ resource_group }}"
+      name: "{{ azure_vm_network_interface }}"
+    register: azure_network_interface_info
+
+  - name: "Set Azure Network Facts"
+    set_fact:
+      azure_vnet_rg: "{{ azure_network_interface_info.networkinterfaces[0].virtual_network.resource_group }}"
+      azure_vnet_name: "{{ azure_network_interface_info.networkinterfaces[0].virtual_network.name }}"
+      azure_vnet_region: "{{ azure_network_interface_info.networkinterfaces[0].location }}"
+      azure_vnet_subnet:  "{{ azure_network_interface_info.networkinterfaces[0].subnet }}"
+      azure_sg_region: "{{ azure_vm_info.vms[0].location }}"
+
+  - name: create Azure security group
+    # create a security group for the vpc
+    azure_rm_securitygroup:
+      resource_group: "{{ resource_group }}"
+      location: "{{ azure_vm_region }}"
+      purge_rules: no
+      name: "{{ sg_name }}"
+      rules: >-
+        {{
+          sg_rules.splitlines()
+          | map('split', ',')
+          | json_query("[*].{
+            name: [0],
+            protocol: [1],
+            source_port_range: [2],
+            destination_port_range: [3],
+            source_address_prefix: [4],
+            destination_address_prefix: [5],
+            priority: [6],
+            access: 'Allow',
+            direction: 'Inbound'
+          }")
+        }}
+      tags:
+        Name: "{{ sg_name }}"
+    #when: (sg_rules is defined and sg_create_rules == '1' and sg_create_new == '1')
+    register: azure_security_group_results
+
+  - name: Update Azure security group with static Rule
+    azure_rm_securitygroup:
+      resource_group: "{{ resource_group }}"
+      location: "{{ azure_vm_region }}"
+      purge_rules: no
+      name: "{{ sg_name }}"
+      rules:
+          - name: AWX-SSH
+            protocol: Tcp
+            source_port_range: "*"
+            destination_port_range: 22
+            source_address_prefix: "{{ sg_ssh_cidr }}"
+            destination_address_prefix: "*"
+            priority: 299
+            access: "Allow"
+            direction: "Inbound"
+    register: azure_security_group_results_2
+
+  - name: Print SG Info
+    debug:
+      msg: "Azure SG INFO: {{ azure_security_group_results }}"
+
+  - name: Print SG Info
+    debug:
+      msg: "Azure SG INFO: {{ azure_security_group_results_2.state.name }}"
+
+  - name: Print Network Interface Info
+    debug:
+      msg: "Azure Network Interface SG INFO: {{ azure_network_interface_info }}"
+
+  - name: Print Network Interface SG Info
+    debug:
+      msg: "Azure Network Interface SG INFO: {{ azure_network_interface_info.networkinterfaces[0].security_group }}"
+
+  - name: Print Network Interface SG Public IP
+    debug:
+      msg: "Azure Network Interface SG Public IP: {{ azure_network_interface_info.networkinterfaces[0].ip_configurations }}"
+
+  - name: Get PublicIP info
+    azure_rm_resource_info:
+      resource_group: "cloud-shell-storage-centralindia"
+      url: "{{ azure_network_interface_info.networkinterfaces[0].ip_configurations[0].public_ip_address }}"
+      api_version: "2022-01-01"
+      provider: Microsoft.Network
+      resource_type: publicIPAddresses
+    register: resource_info
+
+  - debug:
+      msg: "{{ resource_info }}"
+
+  - json_modify:
+      data: "{{ azure_network_interface_info }}"
+      pointer: "/networkinterfaces/0/ip_configurations/0"
+      action: renamekey
+      renamekey: ["public_ip_address", "public_ip_address_name"] #[oldkey, newkey]
+    register: azure_network_interface_info_modified
+
+  - json_modify:
+      data: "{{ azure_network_interface_info_modified.result }}"
+      pointer: "/networkinterfaces/0/ip_configurations/0"
+      action: update
+      #update: { "public_ip_allocation_method": "{{ azure_ip.publicipaddresses[0].allocation_method | capitalize |  default('Dynamic') }}", "public_ip_address_name": "{{ resource_info.response[0].name }}" }
+      update: { "public_ip_allocation_method": "{{ resource_info.response[0].properties.publicIPAllocationMethod | default('Dynamic') }}", "public_ip_address_name": "{{ resource_info.response[0].name | default('') }}" }
+    register: azure_network_interface_info_modified
+
+  # - json_modify:
+      # data: "{{ azure_network_interface_info_modified }}"
+      # pointer: "/networkinterfaces/0/ip_configurations/0"
+      # action: update
+      # update: { "public_ip_allocation_method": "Dynamic", "public_ip_address"}
+    # register: azure_network_interface_info_modified
+    # when: azure_ip.publicipaddresses[0].ip_address == ""
+
+
+#  - json_modify:
+#      data: "{{ azure_network_interface_info_modified.result }}"
+#      pointer: "/networkinterfaces/0/ip_configurations/0"
+#      action: update
+#      update: { "subnet":  { "id": "/subscriptions/123456789/resourceGroups/testing-vm_group/providers/Microsoft.Network/virtualNetworks/testing-vm_group-vnet/subnets/default", "name": "default", "resource_group": "testing-vm_group", "subnet_name": "default" } }
+#   register: azure_network_interface_info_modified
+
+#  - debug:
+#      #msg: "{{ azure_network_interface_info_modified.result.networkinterfaces[0].ip_configurations[0].public_ip_address }}"
+#      msg: "{{ azure_network_interface_info_modified }}"
+
+  - name: Applying NSG to target NIC
+    azure_rm_networkinterface:
+      name: "{{ azure_network_interface_info.networkinterfaces[0].name }}"
+      location: "{{ azure_vnet_region }}"
+      resource_group: "{{ resource_group }}"
+      subnet_name: "{{ azure_vnet_subnet }}"
+      virtual_network:
+        name: "{{ azure_vnet_name }}"
+        resource_group: "{{ azure_vnet_rg }}"
+      #subnet:
+      #  #id: "/subscriptions/123456789/resourceGroups/testing-vm_group/providers/Microsoft.Network/virtualNetworks/testing-vm_group-vnet/subnets/default"
+      #  name: "default"
+      #  virtual_network_name: "testing-vm_group-vnet"
+      #  resource_group: "testing-vm_group"
+      #subnet: "/subscriptions/123456789/resourceGroups/testing-vm_group/providers/Microsoft.Network/virtualNetworks/testing-vm_group-vnet/subnets/default"
+      #virtual_network: "{{ azure_network_interface_info.networkinterfaces[0].virtual_network.name }}"
+      ip_configurations: "{{ azure_network_interface_info_modified.result.networkinterfaces[0].ip_configurations }}"
+      security_group:
+        name:  "{{ sg_name }}"
+        resource_group: "{{ resource_group }}"
+      state: present
