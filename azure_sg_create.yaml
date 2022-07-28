@@ -18,7 +18,7 @@
       resource_group: "cloud-shell-storage-centralindia"
       name: "{{ vm_name }}"
     register: azure_vm_info
-    #when: sg_create_new == '1'
+    when: sg_create_new == '1'
 
     - meta: end_play
     when: sg_create_new == '0'
@@ -76,7 +76,7 @@
         }}
       tags:
         Name: "{{ sg_name }}"
-    #when: (sg_rules is defined and sg_create_rules == '1' and sg_create_new == '1')
+    when: (sg_rules is defined and sg_create_rules == '1' and sg_create_new == '1')
     register: azure_security_group_results
 
   - name: Update Azure security group with static Rule
@@ -95,6 +95,7 @@
             priority: 299
             access: "Allow"
             direction: "Inbound"
+    when: sg_create_new == '1'
     register: azure_security_group_results_2
 
   - name: Print SG Info
