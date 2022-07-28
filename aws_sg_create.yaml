@@ -20,6 +20,9 @@
     register: ec2_info
     #when: sg_create_new == '1'
 
+    - meta: end_play
+    when: sg_create_new == '0'
+
   - name: Print EC2 Info
     debug:
       #msg: "EC2 INFO: {{ ec2_info.instances[0].security_groups[0].group_id }}"
