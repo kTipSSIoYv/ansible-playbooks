@@ -20,9 +20,6 @@
     register: azure_vm_info
     when: sg_create_new == '1'
 
-  - meta: end_play
-    when: sg_create_new == '0'
-
   - name: Print Azure VM Info
     debug:
       #msg: "Azure VM INFO: {{ azure_vm_info.vms[0].network_interface_names[0] }}"
