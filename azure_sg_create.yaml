@@ -4,12 +4,12 @@
   connection: local
   gather_facts: false
   vars:
-    resource_group: "cloud-shell-storage-centralindia"
-    vm_name: Ubuntu915
+    #resource_group: "cloud-shell-storage-centralindia"
+    #vm_name: Ubuntu915
     #public_ip_address: Ubuntu-915-test
-    sg_name: testing-sg_new_5
-    sg_ssh_cidr: "192.168.1.0/24"
-    sg_rules: "Rule_6,Tcp,*,8086,10.10.10.0/24,*,401\nRule_7,Tcp,*,8087,172.168.1.2,*,402"
+    #sg_name: testing-sg_new_5
+    #sg_ssh_cidr: "192.168.1.0/24"
+    #sg_rules: "Rule_6,Tcp,*,8086,10.10.10.0/24,*,401\nRule_7,Tcp,*,8087,172.168.1.2,*,402"
 
   tasks:
 
