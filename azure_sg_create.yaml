@@ -18,7 +18,7 @@
       resource_group: "cloud-shell-storage-centralindia"
       name: "{{ vm_name }}"
     register: azure_vm_info
-    when: sg_create_new == '1'
+    #when: sg_create_new == '1'
 
   - name: Print Azure VM Info
     debug:
