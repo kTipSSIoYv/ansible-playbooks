@@ -14,7 +14,7 @@
   tasks:
 
   - name: Get facts by name
-    azure_rm_virtualmachine_info:
+    azure.azcollection.azure_rm_virtualmachine_info:
       resource_group: "cloud-shell-storage-centralindia"
       name: "{{ vm_name }}"
     register: azure_vm_info
@@ -35,7 +35,7 @@
       azure_vm_region: "{{ azure_vm_info.vms[0].location }}"
 
   - name: Get facts for one network interface
-    azure_rm_networkinterface_info:
+    azure.azcollection.azure_rm_networkinterface_info:
       resource_group: "{{ resource_group }}"
       name: "{{ azure_vm_network_interface }}"
     register: azure_network_interface_info
@@ -50,7 +50,7 @@
 
   - name: create Azure security group
     # create a security group for the vpc
-    azure_rm_securitygroup:
+    azure.azcollection.azure_rm_securitygroup:
       resource_group: "{{ resource_group }}"
       location: "{{ azure_vm_region }}"
       purge_rules: no
@@ -77,7 +77,7 @@
     register: azure_security_group_results
 
   - name: Update Azure security group with static Rule
-    azure_rm_securitygroup:
+    azure.azcollection.azure_rm_securitygroup:
       resource_group: "{{ resource_group }}"
       location: "{{ azure_vm_region }}"
       purge_rules: no
@@ -116,7 +116,7 @@
       msg: "Azure Network Interface SG Public IP: {{ azure_network_interface_info.networkinterfaces[0].ip_configurations }}"
 
   - name: Get PublicIP info
-    azure_rm_resource_info:
+    azure.azcollection.azure_rm_resource_info:
       resource_group: "cloud-shell-storage-centralindia"
       url: "{{ azure_network_interface_info.networkinterfaces[0].ip_configurations[0].public_ip_address }}"
       api_version: "2022-01-01"
@@ -163,7 +163,7 @@
 #      msg: "{{ azure_network_interface_info_modified }}"
 
   - name: Applying NSG to target NIC
-    azure_rm_networkinterface:
+    azure.azcollection.azure_rm_networkinterface:
       name: "{{ azure_network_interface_info.networkinterfaces[0].name }}"
       location: "{{ azure_vnet_region }}"
       resource_group: "{{ resource_group }}"
