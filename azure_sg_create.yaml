@@ -17,7 +17,7 @@
   - name: Get facts by name
     azure_rm_virtualmachine_info:
       resource_group: "cloud-shell-storage-centralindia"
-      name: "{{ vm_name }}"
+      name: "Ubuntu965"
     register: azure_vm_info
     #when: sg_create_new == '1'
 
