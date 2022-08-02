@@ -3,8 +3,7 @@
   hosts: localhost
   connection: local
   gather_facts: false
-  roles:
-    - { role: azure.azure_preview_modules }
+
   #vars:
     #ansible_python_interpreter: /usr/bin/python3.6
     #resource_group: "cloud-shell-storage-centralindia"
