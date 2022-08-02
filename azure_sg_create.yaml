@@ -20,6 +20,7 @@
       resource_group: "{{ resource_group }}"
       name: "{{ vm_name }}"
     register: azure_vm_info
+    delegate_to: localhost
     #when: sg_create_new == '1'
 
   - name: Print Azure VM Info
